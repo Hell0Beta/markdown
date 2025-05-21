@@ -33,8 +33,8 @@ To run locally:
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/markdown-editor.git
-    cd markdown-editor
+    git clone https://github.com/Hell0Beta/markdown.git
+    cd markdown
     ```
 2. Open `index.html` in your browser.
 
