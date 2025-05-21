@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Editor</title>
+    <meta property="og:title" content="Markdown Editor" />
+    <meta property="og:description" content="A sleek and fast Markdown editor.
+                                             Write, edit, and convert Markdown with 
+                                             ease—perfect for developers,
+                                             writers, and note-takers." />
+    
+    <meta property="og:image" content="https://4100806223.ceiscy.com/markdown/banner.png">
+    <meta property="og:url" content="https://4100806223.ceiscy.com/markdown" />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image" href="notepad (1).ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <!-- Add these in the head section -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/katex.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/contrib/auto-render.min.js"></script>
+
+    <style>
+        /* Import retro-inspired fonts */
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;700&family=IBM+Plex+Mono&display=swap');
+
+        :root {
+            --bg-color: #f7f3ee;
+            --text-color: #222;
+            --border-color: #000;
+            --accent-bg: #fff;
+            --table-alt-row: #f0ece7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg-color);
+            font-family: 'IBM Plex Sans', sans-serif;
+            color: var(--text-color);
+            padding: 2rem;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {        
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            border-bottom: 3px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        h1 {
+            display: flex;
+            align-self: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        h1 img {
+            margin-left: 0.8rem;
+            margin-right: 0.8rem;
+            width: 45px;
+            
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--accent-bg);
+            border: 3px solid var(--border-color);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0 var(--border-color);
+            transition: 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background: var(--border-color);
+            color: var(--accent-bg);
+        }
+
+        button:active {
+            box-shadow: none;
+            transform: translate(2px, 2px);
+        }
+
+        .editor-container {
+            display: flex;
+            gap: 2rem;
+            height: calc(100vh - 180px);
+            min-height: 400px;
+        }
+
+        .editor-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-label {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border-color);
+            display: inline-block;
+            padding-bottom: 2px;
+        }
+
+        #markdown-input {
+            flex: 1;
+            font-family: 'IBM Plex Mono', monospace;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 3px solid var(--border-color);
+            background: var(--accent-bg);
+            resize: none;
+            box-shadow: 4px 4px 0 var(--border-color);
+            outline: none;
+        }
+
+        #preview-container {
+            flex: 1;
+            border: 3px solid var(--border-color);
+            padding: 1rem;
+            background: var(--accent-bg);
+            overflow-y: auto;
+            box-shadow: 4px 4px 0 var(--border-color);
+        }
+
+        /* Preview styles */
+        .preview-content h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.25rem;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .preview-content h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .preview-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            margin-top: 1.25rem;
+        }
+
+        .preview-content h4 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .preview-content h5,
+        .preview-content h6 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .preview-content p {
+            margin-bottom: 1rem;
+        }
+
+        .preview-content code {
+            font-family: 'IBM Plex Mono', monospace;
+            background: #f1f1f1;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        .preview-content pre {
+            background: #f1f1f1;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+
+        .preview-content pre code {
+            padding: 0;
+            background: none;
+        }
+
+        .preview-content blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 1rem;
+            margin-left: 0;
+            margin-bottom: 1rem;
+        }
+
+        .preview-content ul,
+        .preview-content ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+        }
+
+        /* Table styles */
+        .preview-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1rem;
+            border: 2px solid var(--border-color);
+        }
+
+        .preview-content th {
+            background-color: var(--border-color);
+            color: var(--accent-bg);
+            text-align: left;
+            padding: 0.75rem;
+            font-weight: 700;
+        }
+
+        .preview-content td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+        }
+
+        .preview-content tr:nth-child(even) {
+            background-color: var(--table-alt-row);
+        }
+
+  
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .editor-column {
+                min-height: 300px;
+            }
+
+            header,
+            .controls {
+                margin-bottom: 1rem;
+            }
+
+            button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+            h1{
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+
+        /* Hidden class for toggling views */
+        .hidden {
+            display: none;
+        }
+
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .preview-content,
+            .preview-content * {
+                visibility: visible;
+            }
+
+            .preview-content {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 2rem;
+            }
+
+            button,
+            #markdown-input,
+            header,
+            .controls,
+            .editor-label {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1> <img src="./headerico.png" width="45px" alt=""> Markdown Editor</h1>
+    </header>
+
+    <div class="controls">
+        <button id="toggle-view">Split View</button>
+        <button id="print-pdf">Print to PDF</button>
+    </div>
+
+    <div class="editor-container">
+        <div class="editor-column" id="input-column">
+            <div class="editor-label">Markdown</div>
+            <textarea id="markdown-input" placeholder="Type your markdown here..."></textarea>
+        </div>
+        <div class="editor-column" id="preview-column">
+            <div class="editor-label">Preview</div>
+            <div id="preview-container">
+                <div class="preview-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script> -->
+    <!-- Add this line for KaTeX (will be loaded dynamically in the code too) -->
+    <script>
+        // MarkdownEditor.js - Main application class
+        class MarkdownEditor {
+            constructor() {
+                // DOM Elements
+                this.markdownInput = document.getElementById('markdown-input');
+                this.preview = document.querySelector('.preview-content');
+                this.toggleViewBtn = document.getElementById('toggle-view');
+                this.printPdfBtn = document.getElementById('print-pdf');
+                this.editorPanel = document.getElementById('input-column');
+                this.previewPanel = document.getElementById('preview-column');
+
+                // Initialize components
+                this.renderer = new MarkdownRenderer();
+                this.viewManager = new ViewManager(this.editorPanel, this.previewPanel, this.toggleViewBtn);
+                this.printer = new PdfPrinter(this.preview);
+
+                // Default content
+                this.defaultMarkdown = `# Welcome to Markdown Editor
+
+## Getting Started
+
+This is a **simple** and _elegant_ markdown editor with live preview.
+
+### Features
+
+* Live preview as you type
+* Toggle between split and single view
+* Print to PDF functionality
+* Custom table styling
+* **NEW**: LaTeX Math Support
+
+#### Table Example
+
+| Feature | Description |
+|---------|-------------|
+| Live Preview | See your markdown rendered in real-time |
+| Split View | Edit and preview side by side |
+| Single View | Focus on either editing or previewing |
+| PDF Export | Save your document as PDF |
+| LaTeX | Render math equations (*Must be single line latex code, **not** multiline*) |
+
+##### Code Example
+
+\`\`\`javascript
+function helloWorld() {
+    console.log("Hello, Markdown!");
+}
+\`\`\`
+
+##### LaTeX Example
+
+Inline equation: $E = mc^2$
+
+Display equation:
+
+$$\\frac{d}{dx}\\left( \\int_{0}^{x} f(u)\\,du\\right)=f(x)$$
+
+`;
+
+                this.init();
+            }
+
+            init() {
+                // Check if all required elements exist
+                if (!this.markdownInput || !this.preview || !this.toggleViewBtn ||
+                    !this.printPdfBtn || !this.editorPanel || !this.previewPanel) {
+                    console.error('Required DOM elements are missing:', {
+                        markdownInput: !!this.markdownInput,
+                        preview: !!this.preview,
+                        toggleViewBtn: !!this.toggleViewBtn,
+                        printPdfBtn: !!this.printPdfBtn,
+                        editorPanel: !!this.editorPanel,
+                        previewPanel: !!this.previewPanel
+                    });
+                    return;
+                }
+
+                // Set initial content
+                this.markdownInput.value = this.defaultMarkdown;
+
+                // Attach event listeners
+                this.attachEventListeners();
+
+                // Initial render
+                this.updatePreview();
+            }
+
+            attachEventListeners() {
+                // Input events
+                this.markdownInput.addEventListener('input', () => this.updatePreview());
+
+                // Button events
+                this.toggleViewBtn.addEventListener('click', () => this.viewManager.toggleView());
+                this.printPdfBtn.addEventListener('click', () => this.printer.printPreviewAsPdf());
+            }
+
+            updatePreview() {
+                // Get the current markdown text
+                const markdownText = this.markdownInput.value;
+
+                // Render the markdown
+                const html = this.renderer.renderMarkdown(markdownText);
+
+                // Update the preview with the rendered HTML
+                this.preview.innerHTML = html;
+
+                // Apply custom styling
+                this.renderer.applyTableStyling(this.preview);
+            }
+        }
+
+        // MarkdownRenderer.js - Handles markdown to HTML conversion
+        class MarkdownRenderer {
+            constructor() {
+                // Configure marked.js options
+                marked.setOptions({
+                    breaks: true, // Convert line breaks to <br>
+                    gfm: true, // Enable GitHub Flavored Markdown
+                    headerIds: true, // Generate IDs for headings
+                    smartLists: true, // Use smarter list behavior
+                    smartypants: true, // Use "smart" typographic punctuation
+                });
+            }
+
+            renderMarkdown(markdownText) {
+                // Use marked.js to convert markdown to HTML
+                return marked.parse(markdownText);
+            }
+
+            applyTableStyling(previewElement) {
+                const tables = previewElement.querySelectorAll('table');
+
+                tables.forEach(table => {
+                    // Ensure the table has proper styling
+                    table.classList.add('styled-table');
+
+                    // Add alternating row colors
+                    const rows = table.querySelectorAll('tr');
+                    rows.forEach((row, index) => {
+                        if (index % 2 === 1) { // Apply to even rows (0-indexed)
+                            row.classList.add('alt-row');
+                        }
+                    });
+                });
+            }
+        }
+
+        // ViewManager.js - Manages the editor/preview layout
+        class ViewManager {
+            constructor(editorPanel, previewPanel, toggleViewBtn) {
+                this.editorPanel = editorPanel;
+                this.previewPanel = previewPanel;
+                this.toggleViewBtn = toggleViewBtn;
+                this.isInSplitView = true;
+            }
+
+            toggleView() {
+                this.isInSplitView = !this.isInSplitView;
+
+                if (this.isInSplitView) {
+                    // Show both panels (split view)
+                    this.editorPanel.classList.remove('hidden');
+                    this.previewPanel.classList.remove('hidden');
+                    this.toggleViewBtn.textContent = 'Single View';
+                } else {
+                    // Show only preview (single view)
+                    this.editorPanel.classList.add('hidden');
+                    this.previewPanel.classList.remove('hidden');
+                    this.toggleViewBtn.textContent = 'Edit Mode';
+
+                    // When clicking edit mode again
+                    if (this.editorPanel.classList.contains('hidden') &&
+                        this.previewPanel.classList.contains('hidden')) {
+                        this.editorPanel.classList.remove('hidden');
+                        this.previewPanel.classList.add('hidden');
+                        this.toggleViewBtn.textContent = 'Preview Mode';
+                    }
+                }
+            }
+        }
+
+        // PdfPrinter.js - Handles PDF printing functionality
+        class PdfPrinter {
+            constructor(previewElement) {
+                this.preview = previewElement;
+            }
+
+            printPreviewAsPdf() {
+                // Save current content for restoration
+                const previewContent = this.preview.innerHTML;
+
+                // Open a new window for printing
+                const printWin = window.open('', '_blank');
+
+                // Create print-ready content
+                const printContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Markdown Document</title>
+    <style>
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: bold;
+        }
+        h1 { font-size: 28px; border-bottom: 2px solid #000; padding-bottom: 8px; }
+        h2 { font-size: 24px; border-bottom: 1px solid #000; padding-bottom: 6px; }
+        h3 { font-size: 20px; }
+        h4 { font-size: 18px; }
+        h5 { font-size: 16px; }
+        h6 { font-size: 15px; }
+        p { margin-bottom: 16px; }
+        ul, ol { margin-bottom: 16px; padding-left: 24px; }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 16px;
+            border: 2px solid #000;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th { background-color: #e5e5e5; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f0eae0; }
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+        blockquote {
+            border-left: 4px solid #000;
+            padding-left: 16px;
+            margin-left: 0;
+            margin-bottom: 16px;
+            color: #555;
+        }
+        @media print {
+            body { margin: 0; padding: 1cm; }
+        }
+    </style>
+    <!-- Add KaTeX CSS for PDF export if needed -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css">
+</head>
+<body>
+    ${previewContent}
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        }
+    <\/script>
+</body>
+</html>
+`;
+
+                // Write to the new window
+                printWin.document.write(printContent);
+                printWin.document.close();
+            }
+        }
+
+        // LaTeXRenderer.js - Fixed version for proper LaTeX support
+        // LaTeXRenderer.js - Modified version that standardizes LaTeX formats
+        class LaTeXRenderer {
+            constructor() {
+                this.isReady = false;
+                this.renderQueue = [];
+                this.initialize();
+            }
+
+            initialize() {
+                if (window.katex && window.renderMathInElement) {
+                    this.isReady = true;
+                    this.processQueue();
+                    return;
+                }
+
+                this.checkLoadInterval = setInterval(() => {
+                    if (window.katex && window.renderMathInElement) {
+                        this.isReady = true;
+                        this.processQueue();
+                        clearInterval(this.checkLoadInterval);
+                    }
+                }, 100);
+            }
+
+            processQueue() {
+                while (this.renderQueue.length > 0) {
+                    const element = this.renderQueue.shift();
+                    this.doRenderLaTeX(element);
+                }
+            }
+
+            renderLaTeX(elementOrTextarea) {
+                if (!elementOrTextarea) return;
+
+                if (!this.isReady) {
+                    this.renderQueue.push(elementOrTextarea);
+                    return;
+                }
+
+                // If it's a <textarea>, extract content and render in a div
+                if (elementOrTextarea.tagName === 'TEXTAREA') {
+                    const content = elementOrTextarea.value;
+                    const output = document.createElement('div');
+                    output.className = 'latex-output';
+                    output.innerHTML = content;
+                    elementOrTextarea.parentNode.insertBefore(output, elementOrTextarea.nextSibling);
+                    this.doRenderLaTeX(output);
+                } else {
+                    this.doRenderLaTeX(elementOrTextarea);
+                }
+            }
+
+            doRenderLaTeX(element) {
+                try {
+                    this.unwrapBlockLatex(element);
+
+                    const text = element.innerHTML;
+                    
+                    window.renderMathInElement(element, {
+                        delimiters: [
+                            { left: "$$", right: "$$", display: true },
+                            { left: "\\[", right: "\\]", display: true },
+                            { left: "$", right: "$", display: false },
+                            { left: "\\(", right: "\\)", display: true },
+                            { left: "\[", right: "\]", display: false },
+                            { left: "\(", right: "\)", display: false }
+                        ],
+                        throwOnError: false,
+                        ignoredTags: ["script", "noscript", "style", "pre", "code", "textarea"]
+                    });
+                } catch (e) {
+                    console.error("Error rendering LaTeX:", e);
+                }
+            }
+
+            unwrapBlockLatex(element) {
+                const paragraphs = element.querySelectorAll('p');
+                paragraphs.forEach(p => {
+                    const html = p.innerHTML.trim();
+                    if (/^\$\$[\s\S]*\$\$$/.test(html)) {
+                        const span = document.createElement('span');
+                        span.innerHTML = html;
+                        p.parentNode.replaceChild(span, p);
+                    }
+                });
+            }
+        }
+
+        // EnhancedMarkdownEditor.js - Only the necessary part
+        class EnhancedMarkdownEditor extends MarkdownEditor {
+            constructor() {
+                super(); // Initialize the parent class first
+
+                // Add LaTeX renderer - create first to ensure it starts initializing
+                this.latexRenderer = new LaTeXRenderer();
+
+                // Add LaTeX toggle button
+                this.addLaTeXToggleButton();
+
+                // LaTeX state - DEFAULT TO TRUE
+                this.isLaTeXEnabled = false;
+            }
+
+            addLaTeXToggleButton() {
+                // Create LaTeX toggle button
+                this.latexToggleBtn = document.createElement('button');
+                this.latexToggleBtn.id = 'toggle-latex';
+                this.latexToggleBtn.textContent = 'LaTeX: OFF';
+
+                // Add the button to controls
+                const controlsDiv = document.querySelector('.controls');
+                controlsDiv.appendChild(this.latexToggleBtn);
+
+                // Add event listener
+                this.latexToggleBtn.addEventListener('click', () => this.toggleLaTeX());
+            }
+
+            toggleLaTeX() {
+                this.isLaTeXEnabled = !this.isLaTeXEnabled;
+                this.latexToggleBtn.textContent = `LaTeX: ${this.isLaTeXEnabled ? 'ON' : 'OFF'}`;
+
+                // Update the preview to reflect LaTeX state
+                this.updatePreview();
+            }
+
+            updatePreview() {
+                // First do the normal markdown rendering
+                super.updatePreview();
+
+                // Then render LaTeX if enabled
+                if (this.isLaTeXEnabled) {
+                    this.latexRenderer.renderLaTeX(this.preview);
+                }
+            }
+        }
+        // Load KaTeX resources - Optimized and reliable loading function
+        function loadKaTeXResources() {
+            return new Promise((resolve) => {
+                // Check if KaTeX is already available
+                if (window.katex && window.renderMathInElement) {
+                    resolve();
+                    return;
+                }
+
+                let cssLoaded = false;
+                let katexLoaded = false;
+                let autoRenderLoaded = false;
+
+                function checkAllLoaded() {
+                    if (cssLoaded && katexLoaded && autoRenderLoaded && window.katex && window.renderMathInElement) {
+                        resolve();
+                    }
+                }
+
+                // Load KaTeX CSS if not present
+                if (!document.querySelector('link[href*="katex.min.css"]')) {
+                    const katexCSS = document.createElement('link');
+                    katexCSS.rel = 'stylesheet';
+                    katexCSS.href = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/katex.min.css';
+                    katexCSS.onload = () => {
+                        cssLoaded = true;
+                        checkAllLoaded();
+                    };
+                    document.head.appendChild(katexCSS);
+                } else {
+                    cssLoaded = true;
+                }
+
+                // Load KaTeX JS if not present
+                if (!window.katex) {
+                    const katexScript = document.createElement('script');
+                    katexScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/katex.min.js';
+                    katexScript.onload = () => {
+                        katexLoaded = true;
+                        checkAllLoaded();
+                    };
+                    document.head.appendChild(katexScript);
+                } else {
+                    katexLoaded = true;
+                }
+
+                // Load auto-render if not present
+                if (!window.renderMathInElement) {
+                    const autoRenderScript = document.createElement('script');
+                    autoRenderScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.4/contrib/auto-render.min.js';
+                    autoRenderScript.onload = () => {
+                        autoRenderLoaded = true;
+                        checkAllLoaded();
+                    };
+                    document.head.appendChild(autoRenderScript);
+                } else {
+                    autoRenderLoaded = true;
+                }
+
+                // Set a timeout in case something fails to load
+                setTimeout(() => {
+                    resolve(); // Resolve anyway after 5 seconds
+                }, 5000);
+            });
+        }
+
+        // Initialize the editor after everything is loaded
+        document.addEventListener('DOMContentLoaded', async () => {
+            // First load KaTeX resources
+            await loadKaTeXResources();
+
+            // Then initialize the editor
+            window.markdownEditor = new EnhancedMarkdownEditor();
+        });
+
+    </script>
+
+</body>
+
+</html>
